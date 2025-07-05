@@ -208,6 +208,15 @@ eda = Bannking_EDA(df,target_col='y')
 
 ##          Calculating Full Analysis
 
-# eda.full_analysis()
+eda.full_analysis()
 
 outlier_report = eda.detect_outliers()
+# print(outlier_report)
+
+
+class Banking_preprocessing(Bannking_EDA):
+
+    df = df
+
+    def __init__(self, df, target_col='y'):
+        super().__init__(df, target_col)
