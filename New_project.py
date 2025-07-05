@@ -9,7 +9,7 @@ from scipy import stats
 import seaborn as sns
 
 
-df = pd.read_csv("C:/Users/bharani/Downloads/bank+marketing/bank/bank-full.csv")
+df = pd.read_csv("bank-full.csv")
 
 
 class Bannking_EDA:
@@ -210,13 +210,5 @@ eda = Bannking_EDA(df,target_col='y')
 
 eda.full_analysis()
 
-outlier_report = eda.detect_outliers()
+# outlier_report = eda.detect_outliers()
 # print(outlier_report)
-
-
-class Banking_preprocessing(Bannking_EDA):
-
-    df = df
-
-    def __init__(self, df, target_col='y'):
-        super().__init__(df, target_col)
