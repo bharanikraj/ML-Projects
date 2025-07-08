@@ -39,8 +39,10 @@ class Banking_preprocessing(BaseEstimator,TransformerMixin):
 
         self.eda.detect_col_types()     ## Used Bannking_Eda's method
 
-        self.numerical_cols = self.eda.numerical_cols
-        self.categorical_cols = self.eda.categorcal_cols  
+        ## Below list comprehension is to exclude 'target_col' from encoding.
+        self.numerical_cols = [col for col in self.eda.numerical_cols if col != self.target_col]
+        self.categorical_cols = [col for col in self.eda.categorcal_cols if col != self.target_col]  
+        
 
         return df
     
@@ -79,12 +81,21 @@ class Banking_preprocessing(BaseEstimator,TransformerMixin):
         self.X_train,self.X_test,self.Y_train,self.Y_test = train_test_split(X,Y,test_size=self.test_size,random_state=self.random_state,stratify=Y)
 
         return self.X_train,self.X_test,self.Y_train,self.Y_test
+
     
 
     def handling_outliers(self,X):
         """First count the number of outliers to understand which technique is good to handle the outliers"""
 
         for col in self.numerical_cols:
+            ## Now to check the original or log transformed column name
+
+            current_col = f"log_{col}" if f"log_{col}" in X.columns else col
+
+            if current_col not in X.columns:
+                continue
+
+            
             q1 = X[col].quantile(0.25)
             q3= X[col].quantile(0.75)
 
@@ -139,19 +150,20 @@ class Banking_preprocessing(BaseEstimator,TransformerMixin):
                     self.encoders[col] = Encoder.fit(X[[col]])
 
                 encoded = self.encoders[col].transform(X[[col]])
-                encoded_df = pd.DataFrame(encoded,columns=[f"{col}_{cat}" for cat in self.encoders[col].categories_[0]])
-
-                X = pd.concat([X.drop(col,axis=1),encoded_df],axis=1)
+                X[col] = encoded
+                print(f"Label encoding for {col} is done")
+                
 
             elif labels > 2:
                 """ Only OHE is used, for Logistic Regression
                     For other classification models like tree baesd, have to use other encoders
                 """
-                Encoder = OneHotEncoder(handle_unknown='ignore',sparse=False)
+                Encoder = OneHotEncoder(handle_unknown='ignore',sparse_output=False)
 
                 if train:
                     self.encoders[col] = Encoder.fit(X[[col]])
                     X[col] = self.encoders[col].transform(X[[col]])
+                    print(f"OHE is completed for {col}")
 
         return X
     
@@ -161,16 +173,20 @@ class Banking_preprocessing(BaseEstimator,TransformerMixin):
         This will learn the preprocessing rules from Training data"""
 
         self.type_based_col_split(df)
-
+        print('Column split done')
+    
         self.handling_nulls_and_duplicates(df)
-
+        print("Nulls and duplicates are handled")
+        
         self.splitting_dataset(df)
+        print('Dataset splitted successfully')
 
         self.X_train = self.handling_outliers(self.X_train)
 
         self.X_train = self.normalize_numerics(self.X_train)
 
         self.X_train = self.encoding_categoricals(self.X_train,train=True)
+        print("Categorical Encoding is completed")
 
         return self
     
@@ -178,11 +194,14 @@ class Banking_preprocessing(BaseEstimator,TransformerMixin):
         """Transforming fitted transformations"""
 
         df = self.handling_nulls_and_duplicates(df)
+        print("Nulls and duplicated are handled well")
 
         X = df.drop(self.target_col,axis=1)
         Y = df[self.target_col] if self.target_col in df else None
+        print("Seperation of target_col is also done")
 
         X = self.handling_outliers(X)
+        print("Outlier handling is also completed")
 
         if len(self.numerical_cols) > 0:
             X[self.numerical_cols] = self.scalar.transform(X[self.numerical_cols])
@@ -192,3 +211,10 @@ class Banking_preprocessing(BaseEstimator,TransformerMixin):
         return X, Y
     
     
+
+data = pd.read_csv('bank-full.csv',delimiter=';',quotechar='"')
+
+preprocessing = Banking_preprocessing()
+
+preprocessing.fit(data)
+preprocessing.transform(data)
