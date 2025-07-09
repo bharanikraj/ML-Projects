@@ -123,7 +123,12 @@ class Banking_preprocessing(BaseEstimator,TransformerMixin):
             else:
                 if outlier_percentage > 20:
                     X[col] = np.log1p(X[col])
-                    X.rename(columns = {col:f"log_{col}"},inplace=True)
+                    X.rename(columns = {col:f"log_{col}"})
+                    ## Below is to update numerical_cols if column names are changed
+
+                    if col in self.numerical_cols:
+                        self.numerical_cols.remove(col)
+                        self.numerical_cols.append(f"log_{col}")
 
             return X
                 
@@ -204,7 +209,13 @@ class Banking_preprocessing(BaseEstimator,TransformerMixin):
         print("Outlier handling is also completed")
 
         if len(self.numerical_cols) > 0:
-            X[self.numerical_cols] = self.scalar.transform(X[self.numerical_cols])
+            ##  Below is to transform columns that exists in the data
+            existing_num_cols = [col for col in self.numerical_cols if col in X.columns]
+
+            if existing_num_cols:
+                X[existing_num_cols] = self.scalar.transform(X[existing_num_cols])
+
+            
 
         X = self.encoding_categoricals(X,train=False)
 
