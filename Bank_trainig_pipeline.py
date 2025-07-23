@@ -3,22 +3,50 @@ from New_project_Preprocessing import Banking_preprocessing
 from New_project_model_training import Banking_Model_Trainer
 import pandas as pd
 
-data = pd.read_csv('bank-full.csv')
+# Load data
+data = pd.read_csv('bank-full.csv', delimiter=';', quotechar='"')
 
-eda = Bannking_EDA(data,target_col='y')
-eda.detect_col_types().analzing_target_distribution()
-eda.summary_stats()
-eda.plot_numerical_dist()
-eda.plot_categorical_dist()
-eda.analyzing_correlation()
-eda.detect_outliers()
-eda.full_analysis()
+# EDA (optional)
+eda = Bannking_EDA(data, target_col='y')
+# eda.full_analysis()  # Uncomment if you want to run EDA
 
-preprocessor = Banking_preprocessing(target_col='y',test_size=0.2)
+print('Preprocessing Starts Here')
+preprocessor = Banking_preprocessing()
 preprocessor.fit(data)
 
-trainer = Banking_Model_Trainer(preprocessor=preprocessor)
-trainer.tune_hyperparamters(preprocessor.X_train,preprocessor.Y_train)
+print(f'Training data shape: {preprocessor.X_train.shape}')
+print(f'Test set data shape: {preprocessor.X_test.shape}')
+print(f'Training data columns: {preprocessor.X_train.columns.tolist()}')
 
-results = trainer.evaluate(preprocessor.X_test,preprocessor.Y_test)
-print(results['Random Forest']['test roc_auc'])
+# Model Training
+print('\nModel training starts here')
+trainer = Banking_Model_Trainer(preprocessor=preprocessor)
+
+# Tuning Hyperparameters
+results = trainer.tune_hyperparamters(preprocessor.X_train, preprocessor.Y_train)
+
+# Display Training Summary
+trainer.get_model_summary()
+
+# Test set evaluation
+print('\nEvaluating models on test set')
+evaluation_results = trainer.evaluate(preprocessor.X_test, preprocessor.Y_test)
+
+print('\n' + '*'*50)
+print('DISPLAYING RESULTS')
+print('*'*50)
+
+for model_name, metrics in evaluation_results.items():
+    print(f'\n{model_name}:')
+    print(f'Test ROC-AUC: {metrics["test_roc_auc"]:.3f}')
+    print(f'Best Parameters: {metrics["best_params"]}')
+    print('Classification Report:')
+    print(metrics["classification_report"])
+
+# Getting the best model
+best_model_name, best_model_data = trainer.get_best_model()
+
+# Example of making predictions on new data
+print(f'\nMaking Predictions with {best_model_name}')
+sample_prediction = trainer.predict(best_model_name, preprocessor.X_test.head(5))
+print(f'Sample predictions: {sample_prediction}')
