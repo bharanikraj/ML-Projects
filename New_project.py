@@ -208,7 +208,7 @@ eda = Bannking_EDA(df,target_col='y')
 
 ##          Calculating Full Analysis
 
-eda.full_analysis()
+eda.analyzing_correlation()
 
 # outlier_report = eda.detect_outliers()
 # print(outlier_report)
